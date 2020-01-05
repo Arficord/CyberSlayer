@@ -5,7 +5,7 @@ public class CharacterController : MonoBehaviour
 {
 
     private Rigidbody2D rb;
-    private Animator animator;
+    private CharacterAnimator animator;
     private CircleCollider2D circleCollider;
 
     public float jumpForce = 10;
@@ -19,32 +19,35 @@ public class CharacterController : MonoBehaviour
     private bool crouching = false;
     private bool facingRight = true;
     private bool sliding = false;
-
+    private bool grounded = true;
+    [SerializeField]
+    private CharacterStates state = CharacterStates.STAND_IDLING;
     private Coroutine slidingCoroutine;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
+        animator = new CharacterAnimator(GetComponent<Animator>());
         circleCollider = GetComponent<CircleCollider2D>();
         airJumpsLeft = maxAirJumps;
     }
 
     private void Update()
     {
-        if ( isGrounded() )
-        {
-            animator.SetBool("Graunded", true);
-            airJumpsLeft = maxAirJumps;
-            animator.SetBool("Jump", false);
-        }
-        else
-        {
-            animator.SetBool("Graunded", false);
-        }
-        animator.SetFloat("Vertical_Movement", rb.velocity.y);
-    }
+        grounded = isGrounded();
 
+        if ( grounded )
+        {
+            airJumpsLeft = maxAirJumps;
+        }
+
+        CharacterStates state = this.state;
+        changeState();
+        if (state != this.state)
+        {
+            animator.update(this.state);
+        }
+    }
     public void jump()
     {
         if( !isGrounded() )
@@ -54,7 +57,6 @@ public class CharacterController : MonoBehaviour
             else
                 return;
         }
-        animator.SetBool( "Jump", true );
         rb.velocity = new Vector2( rb.velocity.x, 0 );
         rb.AddForce( Vector2.up * jumpForce, ForceMode2D.Impulse );
     }
@@ -63,19 +65,15 @@ public class CharacterController : MonoBehaviour
         if (sliding)
             return;
 
-        if(isCrouch==false)
-        {
-            if (!canStandUp())
-                isCrouch = true;
-        }
+        if(!isCrouch && !canStandUp())
+            isCrouch = true;
 
         crouching = isCrouch;
-        animator.SetBool("Crouch", crouching);
         setCrouchCollider(!crouching);
-        
-        if(isCrouch)
+
+        if(crouching)
             movementMultiplier *= crouchSpeedMultiplier;
-        
+
         if ( movementMultiplier > 0 )
             turnRight();
         else if ( movementMultiplier < 0 )
@@ -84,8 +82,6 @@ public class CharacterController : MonoBehaviour
         float real_speed = movementSpeed * movementMultiplier;
 
         rb.velocity = new Vector2(real_speed, rb.velocity.y);
-        //animator.move( real_speed, crouching )
-        animator.SetFloat("Horizontal_Speed", Mathf.Abs(real_speed));
     }
     public void turnLeft()
     {
@@ -130,6 +126,7 @@ public class CharacterController : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
     }
+
     private bool isGrounded()
     {
         RaycastHit2D raycastHit2D = Physics2D.BoxCast(circleCollider.bounds.center, circleCollider.bounds.size, 0f, Vector2.down,0.1f, platformLayerMask);
@@ -140,10 +137,39 @@ public class CharacterController : MonoBehaviour
         Vector3 center = new Vector3(circleCollider.bounds.center.x, circleCollider.bounds.center.y+1, circleCollider.bounds.center.z);
         return !Physics2D.BoxCast(center, circleCollider.bounds.size, 0f, Vector2.up, 1, platformLayerMask);
     }
-    private void OnDrawGizmos()
+    private bool isMoving()
     {
-        Gizmos.DrawWireCube(circleCollider.bounds.center, circleCollider.bounds.size);
+        float range = 1f;
+        return rb.velocity.x > range || rb.velocity.x < -range;
     }
+    private void changeState()
+    {
+        if (grounded == false)
+        {
+            state = rb.velocity.y > 0 ? CharacterStates.JUMPING : CharacterStates.FALLING;
+
+            Debug.Log($"{state}");
+            return;
+        }
+
+        if (sliding)
+        {
+            state = CharacterStates.SLIDING;
+            Debug.Log($"{state}");
+            return;
+        }
+
+        if (crouching)
+        {
+            state = isMoving() ? CharacterStates.CROUCHING : CharacterStates.CROUCH_IDLING;
+            Debug.Log($"{state}");
+            return;
+        }
+
+        state = isMoving() ? CharacterStates.RUN : CharacterStates.STAND_IDLING;
+        Debug.Log($"{state}");
+    }
+
     private void setCrouchCollider(bool flag)
     {
         crouchCollider.enabled = flag;
