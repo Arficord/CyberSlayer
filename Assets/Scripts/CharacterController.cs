@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-public class CharacterController : MonoBehaviour
+public class CharacterController : MonoBehaviour, IEnviromentUser
 {
 
     private Rigidbody2D rb;
@@ -14,7 +14,9 @@ public class CharacterController : MonoBehaviour
     private int airJumpsLeft;
     [Range( 0, 1 )]public float crouchSpeedMultiplier = 0.6f;
     public Collider2D crouchCollider;
-    [SerializeField]public LayerMask platformLayerMask;
+
+
+    private int baseLayer;
 
     private bool crouching = false;
     private bool facingRight = true;
@@ -30,6 +32,7 @@ public class CharacterController : MonoBehaviour
         animator = new CharacterAnimator(GetComponent<Animator>());
         circleCollider = GetComponent<CircleCollider2D>();
         airJumpsLeft = maxAirJumps;
+        baseLayer = gameObject.layer;
     }
 
     private void Update()
@@ -39,6 +42,10 @@ public class CharacterController : MonoBehaviour
         if ( grounded )
         {
             airJumpsLeft = maxAirJumps;
+        }
+        else
+        {
+            slideStop();
         }
 
         CharacterStates state = this.state;
@@ -65,7 +72,7 @@ public class CharacterController : MonoBehaviour
         if (sliding)
             return;
 
-        if(!isCrouch && !canStandUp())
+        if(!isCrouch && grounded && !canStandUp())
             isCrouch = true;
 
         crouching = isCrouch;
@@ -101,6 +108,7 @@ public class CharacterController : MonoBehaviour
     public void slideStart()
     {
         sliding = true;
+        setCrouchCollider(false);
         int facingMultiplier = facingRight ? 1 : -1;
 
         StartCoroutine(slideForce());
@@ -108,7 +116,8 @@ public class CharacterController : MonoBehaviour
     public void slideStop()
     {
         sliding = false;
-        if(slidingCoroutine!=null)
+        setCrouchCollider(true);
+        if (slidingCoroutine!=null)
         {
             StopCoroutine(slidingCoroutine);
         }
@@ -126,16 +135,44 @@ public class CharacterController : MonoBehaviour
             yield return new WaitForFixedUpdate();
         }
     }
-
+    public void dropThroughPlatform()
+    {
+        gameObject.layer = GlobalProperties.gp.fallingLayer ;
+    }
+    public void stopDroppingThroughPlatform()
+    {
+        gameObject.layer = baseLayer;
+    }
+    public void useEnviroment()
+    {
+        RaycastHit2D raycastHit2D = Physics2D.BoxCast(circleCollider.bounds.center, circleCollider.bounds.size, 0f, Vector2.zero, 1, GlobalProperties.gp.usableLayerMask);
+        if(raycastHit2D.collider != null)
+        {
+            IEnviromentUsable usable = (raycastHit2D.collider.gameObject.GetComponent<IEnviromentUsable>());
+            
+            if(usable!=null)
+            {
+                useEnviroment(usable);
+            }
+        }
+    }
+    public void useEnviroment(IEnviromentUsable usable)
+    {
+        usable.beUsed(this);
+    }
     private bool isGrounded()
     {
-        RaycastHit2D raycastHit2D = Physics2D.BoxCast(circleCollider.bounds.center, circleCollider.bounds.size, 0f, Vector2.down,0.1f, platformLayerMask);
+        if(rb.velocity.y>0)
+        {
+            return false;//TODO 
+        }
+        RaycastHit2D raycastHit2D = Physics2D.BoxCast(circleCollider.bounds.center, circleCollider.bounds.size, 0f, Vector2.down,0.1f, GlobalProperties.gp.groundLayerMask);
         return raycastHit2D.collider != null;
     }
     private bool canStandUp()
     {
         Vector3 center = new Vector3(circleCollider.bounds.center.x, circleCollider.bounds.center.y+1, circleCollider.bounds.center.z);
-        return !Physics2D.BoxCast(center, circleCollider.bounds.size, 0f, Vector2.up, 1, platformLayerMask);
+        return !Physics2D.BoxCast(center, circleCollider.bounds.size, 0f, Vector2.up, 1, GlobalProperties.gp.ceilingLayerMask);
     }
     private bool isMoving()
     {
@@ -147,27 +184,22 @@ public class CharacterController : MonoBehaviour
         if (grounded == false)
         {
             state = rb.velocity.y > 0 ? CharacterStates.JUMPING : CharacterStates.FALLING;
-
-            Debug.Log($"{state}");
             return;
         }
 
         if (sliding)
         {
             state = CharacterStates.SLIDING;
-            Debug.Log($"{state}");
             return;
         }
 
         if (crouching)
         {
             state = isMoving() ? CharacterStates.CROUCHING : CharacterStates.CROUCH_IDLING;
-            Debug.Log($"{state}");
             return;
         }
 
         state = isMoving() ? CharacterStates.RUN : CharacterStates.STAND_IDLING;
-        Debug.Log($"{state}");
     }
 
     private void setCrouchCollider(bool flag)

@@ -13,7 +13,12 @@ public class InputController : MonoBehaviour
         ACCEPT,
         CANCEL,
     }
+    public enum ControllMasks
+    {
+        PLAYER
+    }
     public CharacterController character;
+    public ControllMasks controllMask = ControllMasks.PLAYER;
 
     private bool isCrouchKeyDown;
 
@@ -33,10 +38,39 @@ public class InputController : MonoBehaviour
 
     void Update()
     {
-        isCrouchKeyDown = Input.GetKey(KeyCode.DownArrow) ? true : false;
+        switch(controllMask)
+        {
+            case ControllMasks.PLAYER:
+                controllPlayer();
+                break;
+        }
+
+    }
+    private void controllPlayer()
+    {
+        isCrouchKeyDown = Input.GetKey(KeyCode.DownArrow)? true : false;
         if (Input.GetKeyDown(KeyCode.Space))
         {
             character.jump();
+        }
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            character.slideStart();
+        }
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            character.useEnviroment();
+        }
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            character.dropThroughPlatform();
+        }
+        else
+        {
+            if (Input.GetKeyUp(KeyCode.DownArrow))
+            {
+                character.stopDroppingThroughPlatform();
+            }
         }
         character.move(Input.GetAxis("Horizontal"), isCrouchKeyDown);
     }
