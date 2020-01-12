@@ -16,9 +16,6 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
     public Collider2D bodyCrouchCollider;
     public Collider2D platformCollider;
 
-
-    private int baseLayer;
-
     private bool crouching = false;
     private bool facingRight = true;
     private bool sliding = false;
@@ -72,8 +69,6 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
     {
         rb = GetComponent<Rigidbody2D>();
         animator = new CharacterAnimator(GetComponent<Animator>());
-        airJumpsLeft = maxAirJumps;
-        baseLayer = gameObject.layer;
     }
 
     private void Update()
@@ -233,31 +228,4 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
             bodyStraitCollider.enabled = true;
         }
     }
-    void OnDrawGizmosSelected()
-    {
-        Vector2 origin = new Vector2(bodyStraitCollider.bounds.center.x, bodyStraitCollider.bounds.min.y);
-        Vector2 size = new Vector2(bodyStraitCollider.bounds.size.x, 0.1f);
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireCube(origin, size);
-    }
-
-
-    /*
-     * Un used just for lookup
-     * 
-     *  private bool canStandUp()
-        {
-            Vector3 center = new Vector3(bodyCollider.bounds.center.x, bodyCollider.bounds.center.y+1, bodyCollider.bounds.center.z);
-            return !Physics2D.BoxCast(center, bodyCollider.bounds.size, 0f, Vector2.up, 1, GlobalProperties.gp.ceilingLayerMask);
-        }
-        private bool isGrounded()
-        {
-            Vector2 origin = new Vector2 (bodyCollider.bounds.center.x, bodyCollider.bounds.min.y);
-            Vector2 size = new Vector2(bodyCollider.bounds.size.x, 0.1f);
-            size = bodyCollider.bounds.size;
-            //Debug.Log(origin);
-            RaycastHit2D raycastHit2D = Physics2D.BoxCast(origin, bodyCollider.bounds.size, 0f, Vector2.down,0, GlobalProperties.gp.groundLayerMask);
-            return raycastHit2D.collider != null;
-        }
-    */
 }
