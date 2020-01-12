@@ -10,6 +10,7 @@ public class GlobalProperties : MonoBehaviour
     [SerializeField] public int fallingLayer;
     [SerializeField] public LayerMask usableLayerMask;
 
+
     private void Awake()
     {
         gp = this;
