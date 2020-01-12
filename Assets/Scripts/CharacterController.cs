@@ -16,7 +16,27 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
     public Collider2D bodyCrouchCollider;
     public Collider2D platformCollider;
 
-    private bool crouching = false;
+    private bool _crouching = false;
+    public bool Crouching
+    {
+        get
+        {
+            return _crouching;
+        }
+        set
+        {
+
+            if (Grounded && !canStay||sliding)
+            {
+                _crouching = true;
+            }
+            else
+            {
+                _crouching = value;
+            }
+            setCrouchCollider(Crouching);
+        }
+    }
     private bool facingRight = true;
     private bool sliding = false;
     private bool _grounded = true;
@@ -61,6 +81,7 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
     {
         RoofsAbove--;
     }
+
     [SerializeField]
     private CharacterStates state = CharacterStates.STAND_IDLING;
     private Coroutine slidingCoroutine;
@@ -92,18 +113,12 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
         rb.velocity = new Vector2( rb.velocity.x, 0 );
         rb.AddForce( Vector2.up * jumpForce, ForceMode2D.Impulse );
     }
-    public void move(float movementMultiplier, bool isCrouch)
+    public void moveHorizontal(float movementMultiplier)
     {
         if (sliding)
             return;
 
-        if(!isCrouch && Grounded && !canStay)
-            isCrouch = true;
-
-        crouching = isCrouch;
-        setCrouchCollider(crouching);
-
-        if(crouching)
+        if(Crouching)
             movementMultiplier *= crouchSpeedMultiplier;
 
         if ( movementMultiplier > 0 )
@@ -132,6 +147,10 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
     }
     public void slideStart()
     {
+        if (!Grounded || state != CharacterStates.RUN)
+        {
+            return;
+        }
         sliding = true;
         setCrouchCollider(true);
         int facingMultiplier = facingRight ? 1 : -1;
@@ -159,6 +178,7 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
             rb.velocity = new Vector2(movement, rb.velocity.y);
             yield return new WaitForFixedUpdate();
         }
+        slideStop();
     }
     public void dropThroughPlatform()
     {
@@ -206,7 +226,7 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
             return;
         }
 
-        if (crouching)
+        if (Crouching)
         {
             state = isMoving() ? CharacterStates.CROUCHING : CharacterStates.CROUCH_IDLING;
             return;
@@ -214,7 +234,6 @@ public class CharacterController : MonoBehaviour, IEnviromentUser
 
         state = isMoving() ? CharacterStates.RUN : CharacterStates.STAND_IDLING;
     }
-
     private void setCrouchCollider(bool flag)
     {
         if(flag)

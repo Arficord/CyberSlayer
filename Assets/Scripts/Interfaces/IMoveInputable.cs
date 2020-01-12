@@ -4,5 +4,8 @@ using UnityEngine;
 
 public interface IMoveInputable
 {
-
+    void jump();
+    void moveHorizontal(float movementMultiplier);
+    void moveVertical(float movementMultiplier);
+    void slide();
 }

@@ -72,6 +72,7 @@ public class InputController : MonoBehaviour
                 character.stopDroppingThroughPlatform();
             }
         }
-        character.move(Input.GetAxis("Horizontal"), isCrouchKeyDown);
+        character.Crouching = isCrouchKeyDown;
+        character.moveHorizontal(Input.GetAxis("Horizontal"));
     }
 }
