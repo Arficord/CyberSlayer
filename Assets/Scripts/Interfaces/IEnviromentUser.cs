@@ -5,4 +5,6 @@ using UnityEngine;
 public interface IEnviromentUser
 {
     void useEnviroment(IEnviromentUsable usable);
+
+    CharacterController getCharacterController();
 }

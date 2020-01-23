@@ -55,24 +55,25 @@ public class InputController : MonoBehaviour
         }
         if (Input.GetKeyDown(KeyCode.X))
         {
-            character.slideStart();
+            character.doSpecialMoves();
         }
         if (Input.GetKeyDown(KeyCode.E))
         {
             character.useEnviroment();
         }
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        float v_movement = Input.GetAxis("Vertical");
+        if(v_movement>0)
         {
-            character.dropThroughPlatform();
+            v_movement = 1;
         }
         else
         {
-            if (Input.GetKeyUp(KeyCode.DownArrow))
+            if(v_movement<0)
             {
-                character.stopDroppingThroughPlatform();
+                v_movement = -1;
             }
         }
-        character.Crouching = isCrouchKeyDown;
+        character.moveVertical(v_movement);
         character.moveHorizontal(Input.GetAxis("Horizontal"));
     }
 }

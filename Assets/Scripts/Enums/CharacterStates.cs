@@ -11,4 +11,8 @@ public enum CharacterStates
     JUMPING = 4,
     FALLING = 5,
     SLIDING = 6,
+
+    LADDER_IDLING =7,
+    LADDER_GOING_UP = 8,
+    LADDER_GOING_DOWN = 9,
 }
