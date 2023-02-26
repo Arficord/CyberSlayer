@@ -1,4 +1,4 @@
-# CyberSlayer (Work in progress)
+# CyberSlayer (Abandoned)
 <p>
 The game is a slasher in 2D format. This means that more time the player destroys opponents (in the open) than jumps and moves around the level. The game also has locations without opponents for immersion in the outside world.
 </p>
